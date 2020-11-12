@@ -1,5 +1,6 @@
 package com.example.mediaplayer;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
@@ -24,7 +25,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import pub.devrel.easypermissions.EasyPermissions;
+
 public class MainActivity extends AppCompatActivity {
+    final int seekTime = 5000;
+    //final File dir1 = new File(Environment.getExternalStorageDirectory(), "");
+    final File dir = new File(Environment.getStorageDirectory(), "/");
     // Variables
     ListView lvMediaList;
     TextView tvPosition, tvDuration, tvCurrentSong;
@@ -34,13 +40,14 @@ public class MainActivity extends AppCompatActivity {
     MediaPlayer mediaPlayer;
     Handler handler = new Handler();
     Runnable runnable;
-    final int seekTime = 5000;
-    final File dir = new File(Environment.getExternalStorageDirectory(), "");
     int lvLastClickedItemID = 0;
     int _pos = 0;
     boolean isLocked = false;
     boolean isRepeatOne = false;
     boolean isRepeatAll = false;
+    List<String> songs = new ArrayList<String>();
+    List<String> filePaths = new ArrayList<String>();
+    List<String> titleTop = new ArrayList<String>();
 
     @RequiresApi(api = Build.VERSION_CODES.R)
     @Override
@@ -323,7 +330,6 @@ public class MainActivity extends AppCompatActivity {
         return String.format("%02d:%02d", minute, second);
     }
 
-
     public void getFiles(String dirPath, int level, String extention) {
         MediaMetadataRetriever metaRetriver = new MediaMetadataRetriever();
         File dir = new File(dirPath);
@@ -353,20 +359,34 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    List<String> songs = new ArrayList<String>();
-    List<String> filePaths = new ArrayList<String>();
-    List<String> titleTop = new ArrayList<String>();
-
     private ArrayAdapter<String> GetAllMedia(File dir) {
         songs.clear();
         filePaths.clear();
         titleTop.clear();
-        getFiles(dir.getPath(), 10, "mp3");
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_list_item_1,
-                songs);
-        return adapter;
+
+        getFiles(Environment.getStorageDirectory().getPath(), 10, "mp3");
+        if (EasyPermissions.hasPermissions(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            getFiles(Environment.getExternalStorageState(), 10, "mp3");
+            ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+                    android.R.layout.simple_list_item_1,
+                    songs);
+            return adapter;
+        } else {
+            EasyPermissions.requestPermissions(
+                    this,
+                    "Devam etmek için harici veri alanına ulaşma izin vermelisiniz.",
+                    0,
+                    Manifest.permission.READ_EXTERNAL_STORAGE);
+/*            while (!EasyPermissions.hasPermissions(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            GetAllMedia(dir);*/
+            return null;
+
+        }
     }
-
-
 }
