@@ -27,10 +27,11 @@ import java.util.concurrent.TimeUnit;
 
 import pub.devrel.easypermissions.EasyPermissions;
 
-@RequiresApi(api = Build.VERSION_CODES.R)
 public class MainActivity extends AppCompatActivity {
     final int seekTime = 5000;
+    //final File dir1 = new File(Environment.getExternalStorageDirectory(), "");
     final File dir = new File(Environment.getStorageDirectory(), "/");
+    // Variables
     ListView lvMediaList;
     TextView tvPosition, tvDuration, tvCurrentSong;
     SeekBar sbSeekBar;
@@ -41,7 +42,6 @@ public class MainActivity extends AppCompatActivity {
     Runnable runnable;
     int lvLastClickedItemID = 0;
     int _pos = 0;
-    int _pausedLength = 0;
     boolean isLocked = false;
     boolean isRepeatOne = false;
     boolean isRepeatAll = false;
@@ -161,7 +161,6 @@ public class MainActivity extends AppCompatActivity {
                 lvLastClickedItemID = _pos;
                 _pos--;
                 if (_pos == -1) _pos = lvMediaList.getCount() - 1;
-                _pausedLength = 0;
                 ivPlay.callOnClick();
             }
         });
@@ -173,7 +172,6 @@ public class MainActivity extends AppCompatActivity {
                 lvLastClickedItemID = _pos;
                 _pos++;
                 if (_pos == lvMediaList.getCount()) _pos = 0;
-                _pausedLength = 0;
                 ivPlay.callOnClick();
             }
         });
@@ -185,7 +183,6 @@ public class MainActivity extends AppCompatActivity {
                 ivPlay.setVisibility(View.VISIBLE);
                 ivPause.setVisibility(View.GONE);
                 mediaPlayer.pause();
-                _pausedLength = mediaPlayer.getCurrentPosition();
                 handler.removeCallbacks(runnable);
             }
         });
@@ -254,7 +251,6 @@ public class MainActivity extends AppCompatActivity {
 
                 if (mediaPlayer != null && mediaPlayer.isPlaying()) {
                     ivPause.callOnClick();
-                    _pausedLength = 0;
                 }
 
                 mediaPlayer = MediaPlayer.create(getApplicationContext(), Uri.parse(uri));
@@ -270,9 +266,7 @@ public class MainActivity extends AppCompatActivity {
                 tvDuration.setText(setFormat(duration));
                 ivPlay.setVisibility(View.GONE);
                 ivPause.setVisibility(View.VISIBLE);
-                mediaPlayer.seekTo(_pausedLength);
                 mediaPlayer.start();
-                _pausedLength = 0;
                 sbSeekBar.setMax(mediaPlayer.getDuration());
                 handler.postDelayed(runnable, 0);
                 lvLastClickedItemID = _pos;
@@ -285,7 +279,6 @@ public class MainActivity extends AppCompatActivity {
                 if (isLocked) return;
                 ((TextView) view).setBackgroundColor(getColor(R.color.selectedItemBackground));
                 _pos = position;
-                _pausedLength = 0;
                 ivPlay.callOnClick();
 
                 mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
@@ -312,7 +305,6 @@ public class MainActivity extends AppCompatActivity {
                     _pos = 0;
                 } else {
                     ivPause.callOnClick();
-                    _pausedLength = 0;
                     return;
                 }
             }
@@ -326,10 +318,7 @@ public class MainActivity extends AppCompatActivity {
                 OnCompletion();
             }
         });
-        boolean _locked = isLocked;
-        isLocked = false;
         ivPlay.callOnClick();
-        isLocked = _locked;
     }
 
     @SuppressLint("DefaultLocate")
@@ -348,7 +337,7 @@ public class MainActivity extends AppCompatActivity {
         if (firstLevelFiles != null && firstLevelFiles.length > 0) {
             for (File aFile : firstLevelFiles) {
                 if (aFile.isDirectory()) {
-                    getFiles(aFile.getPath(), level + 1, extention);
+                    getFiles(aFile.getAbsolutePath(), level + 1, extention);
                 } else {
                     if (aFile.getName().endsWith("." + extention)) {
                         metaRetriver.setDataSource(dirPath + "/" + aFile.getName());
@@ -377,9 +366,9 @@ public class MainActivity extends AppCompatActivity {
 
         getFiles(Environment.getStorageDirectory().getPath(), 10, "mp3");
         if (EasyPermissions.hasPermissions(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
-            getFiles(Environment.getExternalStorageDirectory().getPath(), 10, "mp3");
+            getFiles(Environment.getExternalStorageState(), 10, "mp3");
             ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-                    android.R.layout.simple_gallery_item,
+                    android.R.layout.simple_list_item_1,
                     songs);
             return adapter;
         } else {
@@ -394,11 +383,10 @@ public class MainActivity extends AppCompatActivity {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-            */
-        }
-        //GetAllMedia(dir);
-        return null;
+            }
+            GetAllMedia(dir);*/
+            return null;
 
+        }
     }
 }
-
