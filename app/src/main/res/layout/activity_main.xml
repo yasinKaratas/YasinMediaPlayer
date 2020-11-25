@@ -20,7 +20,7 @@
         android:singleLine="true"
         android:text="@string/currentSong"
         android:textAlignment="center"
-        android:textColor="@color/purple_700"
+        android:textColor="@color/white"
         android:textSize="40dp" />
 
     <ListView
