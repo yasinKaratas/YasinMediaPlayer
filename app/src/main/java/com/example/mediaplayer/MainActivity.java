@@ -347,9 +347,8 @@ public class MainActivity extends AppCompatActivity {
         File[] firstLevelFiles = dir.listFiles();
         if (firstLevelFiles != null && firstLevelFiles.length > 0) {
             for (File aFile : firstLevelFiles) {
-                if (aFile.isDirectory()) {
-                    getFiles(aFile.getPath(), level + 1, extention);
-                } else {
+                if (aFile.isDirectory()) getFiles(aFile.getPath(), level + 1, extention);
+                else {
                     if (aFile.getName().endsWith("." + extention)) {
                         metaRetriver.setDataSource(dirPath + "/" + aFile.getName());
                         String _title = metaRetriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
