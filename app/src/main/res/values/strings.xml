@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">Media Player 77</string>
-    <string name="currentSong">Parça: </string>
+    <string name="currentSong">Oynatılan Parça: </string>
 </resources>

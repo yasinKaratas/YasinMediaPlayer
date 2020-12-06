@@ -7,7 +7,7 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="listBackground">#63B1EF</color>
+    <color name="listBackground">@color/listText</color>
     <color name="mainBackground">#3C64CC</color>
     <color name="listText">#FFFFFF</color>
     <color name="selectedItemBackground">@color/mainBackground</color>
