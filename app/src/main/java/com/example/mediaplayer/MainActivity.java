@@ -17,7 +17,6 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
@@ -180,7 +179,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 String currentSongTitle = getString(R.string.currentSong);
                 tvCurrentSong.setText(currentSongTitle + " " + titleTop.get(_pos));
                 tvCurrentSong.setSelected(true);
-                String uri = filePaths.get(_pos).toString();
+                String uri = filePaths.get(_pos);
                 if (mediaPlayer != null && mediaPlayer.isPlaying()) {
                     ivPause.callOnClick();
                     _pausedLength = 0;
@@ -299,7 +298,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }
         lvMediaList.setSelection(_pos);
-        String uri = filePaths.get(_pos).toString();
+        String uri = filePaths.get(_pos);
         mediaPlayer = MediaPlayer.create(getApplicationContext(), Uri.parse(uri));
         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
