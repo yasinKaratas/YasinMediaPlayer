@@ -158,7 +158,6 @@
             android:layout_height="24dp"
             android:src="@drawable/ic_unlock"
             android:visibility="gone" />
-
     </LinearLayout>
 
 </LinearLayout>

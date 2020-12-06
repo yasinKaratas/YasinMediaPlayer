@@ -2,6 +2,7 @@ package com.example.mediaplayer;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.SharedPreferences;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -16,6 +17,7 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
@@ -28,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 import pub.devrel.easypermissions.EasyPermissions;
 
 @RequiresApi(api = Build.VERSION_CODES.R)
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     final int seekTime = 5000;
     final File dir = new File(Environment.getStorageDirectory(), "/");
     ListView lvMediaList;
@@ -39,23 +41,11 @@ public class MainActivity extends AppCompatActivity {
     MediaPlayer mediaPlayer;
     Handler handler = new Handler();
     Runnable runnable;
-    int lvLastClickedItemID = 0;
-    int _pos = 0;
-    int _pausedLength = 0;
-    boolean isLocked = false;
-    boolean isRepeatOne = false;
-    boolean isRepeatAll = false;
-    List<String> songs = new ArrayList<String>();
-    List<String> filePaths = new ArrayList<String>();
-    List<String> titleTop = new ArrayList<String>();
+    int lvLastClickedItemID = 0, _pos = 0, _pausedLength = 0, currentPosition = 0;
+    boolean isLocked = false, isRepeatOne = false, isRepeatAll = false;
+    List<String> songs = new ArrayList<String>(), filePaths = new ArrayList<String>(), titleTop = new ArrayList<String>();
 
-    @RequiresApi(api = Build.VERSION_CODES.R)
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        // Assigning the variables
+    void init() {
         lvMediaList = findViewById(R.id.lvMediaList);
         lvMediaList.setAdapter(GetAllMedia(new File(dir, "/")));
         tvCurrentSong = findViewById(R.id.tvCurrentSong);
@@ -74,9 +64,164 @@ public class MainActivity extends AppCompatActivity {
         ivRepeatAllWhite = findViewById(R.id.ivRepeatAllWhite);
         ivRepeatOneGray = findViewById(R.id.ivRepeatOneGray);
         ivRepeatOneWhite = findViewById(R.id.ivRepeatOneWhite);
+        mediaPlayer = new MediaPlayer();
 
-        // Creating the media player
-        mediaPlayer = MediaPlayer.create(this, R.raw.fani_kapa_gozunu);
+        ivPrevius.setOnClickListener(this);
+        ivFR.setOnClickListener(this);
+        ivPlay.setOnClickListener(this);
+        ivPause.setOnClickListener(this);
+        ivFF.setOnClickListener(this);
+        ivNext.setOnClickListener(this);
+        ivLock.setOnClickListener(this);
+        ivUnlock.setOnClickListener(this);
+        ivRepeatAllGray.setOnClickListener(this);
+        ivRepeatAllWhite.setOnClickListener(this);
+        ivRepeatOneGray.setOnClickListener(this);
+        ivRepeatOneWhite.setOnClickListener(this);
+    }
+
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.ivLock:
+                ivLock.setVisibility(View.GONE);
+                ivUnlock.setVisibility(View.VISIBLE);
+                isLocked = true;
+                break;
+
+            case R.id.ivUnlock:
+                ivLock.setVisibility(View.VISIBLE);
+                ivUnlock.setVisibility(View.GONE);
+                isLocked = false;
+                break;
+
+            case R.id.ivRepeatOneWhite:
+                if (isLocked) break;
+                ivRepeatOneWhite.setVisibility(View.GONE);
+                ivRepeatOneGray.setVisibility(View.VISIBLE);
+                isRepeatOne = false;
+                break;
+
+            case R.id.ivRepeatOneGray:
+                if (isLocked) break;
+                ivRepeatOneGray.setVisibility(View.GONE);
+                ivRepeatOneWhite.setVisibility(View.VISIBLE);
+                isRepeatOne = true;
+                ivRepeatAllWhite.setVisibility(View.GONE);
+                ivRepeatAllGray.setVisibility(View.VISIBLE);
+                isRepeatAll = !isRepeatOne;
+                break;
+
+            case R.id.ivRepeatAllWhite:
+                if (isLocked) break;
+                ivRepeatAllWhite.setVisibility(View.GONE);
+                ivRepeatAllGray.setVisibility(View.VISIBLE);
+                isRepeatAll = false;
+                break;
+
+            case R.id.ivRepeatAllGray:
+                if (isLocked) break;
+                ivRepeatAllGray.setVisibility(View.GONE);
+                ivRepeatAllWhite.setVisibility(View.VISIBLE);
+                isRepeatAll = true;
+                ivRepeatOneWhite.setVisibility(View.GONE);
+                ivRepeatOneGray.setVisibility(View.VISIBLE);
+                isRepeatOne = !isRepeatAll;
+                break;
+
+            case R.id.ivPrevius:
+                if (isLocked) break;
+                lvLastClickedItemID = _pos;
+                _pos--;
+                if (_pos == -1) _pos = lvMediaList.getCount() - 1;
+                _pausedLength = 0;
+                ivPlay.callOnClick();
+                break;
+
+            case R.id.ivNext:
+                if (isLocked) break;
+                lvLastClickedItemID = _pos;
+                _pos++;
+                if (_pos == lvMediaList.getCount()) _pos = 0;
+                _pausedLength = 0;
+                ivPlay.callOnClick();
+                break;
+
+            case R.id.ivPause:
+                if (isLocked) break;
+                ivPlay.setVisibility(View.VISIBLE);
+                ivPause.setVisibility(View.GONE);
+                mediaPlayer.pause();
+                _pausedLength = mediaPlayer.getCurrentPosition();
+                handler.removeCallbacks(runnable);
+                break;
+
+            case R.id.ivFF:
+                if (isLocked) break;
+                currentPosition = mediaPlayer.getCurrentPosition();
+                int duration = mediaPlayer.getDuration();
+                int newPosition = Math.min(duration - currentPosition, seekTime) + currentPosition;
+                mediaPlayer.seekTo(newPosition);
+                tvPosition.setText(setFormat(newPosition));
+                break;
+
+            case R.id.ivFR:
+                if (isLocked) break;
+                currentPosition = mediaPlayer.getCurrentPosition();
+                newPosition = currentPosition - Math.min(currentPosition, seekTime);
+                mediaPlayer.seekTo(newPosition);
+                tvPosition.setText(setFormat(newPosition));
+                break;
+
+            case R.id.ivPlay:
+                if (isLocked) break;
+                if (lvMediaList.getCount() == 0) break;
+                lvMediaList.getChildAt(lvLastClickedItemID).setBackgroundColor(getColor(R.color.listBackground));
+                lvMediaList.getChildAt(_pos).setBackgroundColor(getColor(R.color.selectedItemBackground));
+                String currentSongTitle = getString(R.string.currentSong);
+                tvCurrentSong.setText(currentSongTitle + " " + titleTop.get(_pos));
+                tvCurrentSong.setSelected(true);
+                String uri = filePaths.get(_pos).toString();
+                if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                    ivPause.callOnClick();
+                    _pausedLength = 0;
+                }
+                mediaPlayer = MediaPlayer.create(getApplicationContext(), Uri.parse(uri));
+                mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                    @Override
+                    public void onCompletion(MediaPlayer mp) {
+
+                        OnCompletion();
+                    }
+                });
+                duration = mediaPlayer.getDuration();
+                tvDuration.setText(setFormat(duration));
+                ivPlay.setVisibility(View.GONE);
+                ivPause.setVisibility(View.VISIBLE);
+                mediaPlayer.seekTo(_pausedLength);
+                mediaPlayer.start();
+                _pausedLength = 0;
+                sbSeekBar.setMax(mediaPlayer.getDuration());
+                handler.postDelayed(runnable, 0);
+                lvLastClickedItemID = _pos;
+                break;
+            default:
+                break;
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        SaveSettings();
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        init();
+        GetSettings();
+
         // Do events 2 times per second while music is playing...
         runnable = new Runnable() {
             @Override
@@ -86,132 +231,6 @@ public class MainActivity extends AppCompatActivity {
                 tvPosition.setText(setFormat(mediaPlayer.getCurrentPosition()));
             }
         };
-
-        ivLock.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ivLock.setVisibility(View.GONE);
-                ivUnlock.setVisibility(View.VISIBLE);
-                isLocked = true;
-            }
-        });
-
-        ivUnlock.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ivLock.setVisibility(View.VISIBLE);
-                ivUnlock.setVisibility(View.GONE);
-                isLocked = false;
-            }
-        });
-
-        ivRepeatOneWhite.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (isLocked) return;
-                ivRepeatOneWhite.setVisibility(View.GONE);
-                ivRepeatOneGray.setVisibility(View.VISIBLE);
-                isRepeatOne = false;
-            }
-        });
-
-        ivRepeatOneGray.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (isLocked) return;
-                ivRepeatOneGray.setVisibility(View.GONE);
-                ivRepeatOneWhite.setVisibility(View.VISIBLE);
-                isRepeatOne = true;
-
-                ivRepeatAllWhite.setVisibility(View.GONE);
-                ivRepeatAllGray.setVisibility(View.VISIBLE);
-                isRepeatAll = !isRepeatOne;
-            }
-        });
-
-        ivRepeatAllWhite.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (isLocked) return;
-                ivRepeatAllWhite.setVisibility(View.GONE);
-                ivRepeatAllGray.setVisibility(View.VISIBLE);
-                isRepeatAll = false;
-            }
-        });
-
-        ivRepeatAllGray.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (isLocked) return;
-                ivRepeatAllGray.setVisibility(View.GONE);
-                ivRepeatAllWhite.setVisibility(View.VISIBLE);
-                isRepeatAll = true;
-
-                ivRepeatOneWhite.setVisibility(View.GONE);
-                ivRepeatOneGray.setVisibility(View.VISIBLE);
-                isRepeatOne = !isRepeatAll;
-            }
-        });
-
-
-        ivPrevius.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (isLocked) return;
-                lvLastClickedItemID = _pos;
-                _pos--;
-                if (_pos == -1) _pos = lvMediaList.getCount() - 1;
-                _pausedLength = 0;
-                ivPlay.callOnClick();
-            }
-        });
-
-        ivNext.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (isLocked) return;
-                lvLastClickedItemID = _pos;
-                _pos++;
-                if (_pos == lvMediaList.getCount()) _pos = 0;
-                _pausedLength = 0;
-                ivPlay.callOnClick();
-            }
-        });
-
-        ivPause.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (isLocked) return;
-                ivPlay.setVisibility(View.VISIBLE);
-                ivPause.setVisibility(View.GONE);
-                mediaPlayer.pause();
-                _pausedLength = mediaPlayer.getCurrentPosition();
-                handler.removeCallbacks(runnable);
-            }
-        });
-
-        ivFF.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (isLocked) return;
-                int currentPosition = mediaPlayer.getCurrentPosition();
-                int duration = mediaPlayer.getDuration();
-                int newPosition = Math.min(duration - currentPosition, seekTime) + currentPosition;
-                mediaPlayer.seekTo(newPosition);
-                tvPosition.setText(setFormat(newPosition));
-            }
-        });
-
-        ivFR.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (isLocked) return;
-                int currentPosition = mediaPlayer.getCurrentPosition();
-                int newPosition = currentPosition - Math.min(currentPosition, seekTime);
-                mediaPlayer.seekTo(newPosition);
-                tvPosition.setText(setFormat(newPosition));
-            }
-        });
 
         sbSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -240,44 +259,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        ivPlay.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (isLocked) return;
-                lvMediaList.getChildAt(lvLastClickedItemID).setBackgroundColor(getColor(R.color.listBackground));
-                lvMediaList.getChildAt(_pos).setBackgroundColor(getColor(R.color.selectedItemBackground));
-
-                String currentSongTitle = getString(R.string.currentSong);
-                tvCurrentSong.setText(currentSongTitle + " " + titleTop.get(_pos));
-                tvCurrentSong.setSelected(true);
-                String uri = filePaths.get(_pos).toString();
-
-                if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-                    ivPause.callOnClick();
-                    _pausedLength = 0;
-                }
-
-                mediaPlayer = MediaPlayer.create(getApplicationContext(), Uri.parse(uri));
-                mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                    @Override
-                    public void onCompletion(MediaPlayer mp) {
-
-                        OnCompletion();
-                    }
-                });
-
-                int duration = mediaPlayer.getDuration();
-                tvDuration.setText(setFormat(duration));
-                ivPlay.setVisibility(View.GONE);
-                ivPause.setVisibility(View.VISIBLE);
-                mediaPlayer.seekTo(_pausedLength);
-                mediaPlayer.start();
-                _pausedLength = 0;
-                sbSeekBar.setMax(mediaPlayer.getDuration());
-                handler.postDelayed(runnable, 0);
-                lvLastClickedItemID = _pos;
-            }
-        });
 
         lvMediaList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -296,8 +277,8 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
         });
-
     }
+
 
     private void OnCompletion() {
         ivPause.setVisibility(View.GONE);
@@ -373,14 +354,16 @@ public class MainActivity extends AppCompatActivity {
         songs.clear();
         filePaths.clear();
         titleTop.clear();
-
+        ArrayAdapter<String> adapter = null;
         getFiles(Environment.getStorageDirectory().getPath(), 10, "mp3");
+        adapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_gallery_item,
+                songs);
         if (EasyPermissions.hasPermissions(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
             getFiles(Environment.getExternalStorageDirectory().getPath(), 10, "mp3");
-            ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+            adapter = new ArrayAdapter<String>(this,
                     android.R.layout.simple_gallery_item,
                     songs);
-            return adapter;
         } else {
             EasyPermissions.requestPermissions(
                     this,
@@ -396,8 +379,37 @@ public class MainActivity extends AppCompatActivity {
             */
         }
         //GetAllMedia(dir);
-        return null;
+        return adapter;
 
     }
-}
 
+    boolean SaveSettings() {
+        SharedPreferences settings = getSharedPreferences("Settings", 0);
+        SharedPreferences.Editor editor = settings.edit();
+        editor.putBoolean("RepeatOne", ivRepeatOneWhite.getVisibility() == View.VISIBLE);
+        editor.putBoolean("RepeatAll", ivRepeatAllWhite.getVisibility() == View.VISIBLE);
+        editor.putBoolean("Locked", ivLock.getVisibility() == View.VISIBLE);
+        editor.commit();
+        return true;
+    }
+
+    boolean GetSettings() {
+        SharedPreferences settings = getSharedPreferences("Settings", 0);
+        if (settings.getBoolean("RepeatOne", false)) {
+            ivRepeatOneGray.callOnClick();
+        } else {
+            ivRepeatOneWhite.callOnClick();
+        }
+        if (settings.getBoolean("RepeatAll", false)) {
+            ivRepeatAllGray.callOnClick();
+        } else {
+            ivRepeatAllWhite.callOnClick();
+        }
+        if (settings.getBoolean("Locked", false)) {
+            ivUnlock.callOnClick();
+        } else {
+            ivLock.callOnClick();
+        }
+        return true;
+    }
+}
