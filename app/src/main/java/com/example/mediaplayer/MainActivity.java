@@ -11,7 +11,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -33,16 +32,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     final int seekTime = 5000;
     final File dir = new File(Environment.getStorageDirectory(), "/");
     ListView lvMediaList;
-    TextView tvPosition, tvDuration, tvCurrentSong;
+    TextView tvPosition,
+            tvDuration,
+            tvCurrentSong;
     SeekBar sbSeekBar;
-    ImageView ivPrevius, ivFR, ivPlay, ivPause, ivFF, ivNext, ivLock, ivUnlock,
+    ImageView ivPrevious, ivFR, ivPlay, ivPause, ivFF, ivNext, ivLock, ivUnlock,
             ivRepeatAllWhite, ivRepeatAllGray, ivRepeatOneWhite, ivRepeatOneGray;
     MediaPlayer mediaPlayer;
     Handler handler = new Handler();
     Runnable runnable;
-    int lvLastClickedItemID = 0, _pos = 0, _pausedLength = 0, currentPosition = 0;
-    boolean isLocked = false, isRepeatOne = false, isRepeatAll = false;
-    List<String> songs = new ArrayList<String>(), filePaths = new ArrayList<String>(), titleTop = new ArrayList<String>();
+    int lvLastClickedItemID = 0,
+            _pos = 0,
+            _pausedLength = 0,
+            currentPosition = 0;
+    boolean isLocked = false,
+            isRepeatOne = false,
+            isRepeatAll = false;
+    List<String> songs = new ArrayList<>(),
+            filePaths = new ArrayList<>(),
+            titleTop = new ArrayList<>();
 
     void init() {
         lvMediaList = findViewById(R.id.lvMediaList);
@@ -51,7 +59,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         tvPosition = findViewById(R.id.tvPosition);
         tvDuration = findViewById(R.id.tvDuration);
         sbSeekBar = findViewById(R.id.sbSeekBar);
-        ivPrevius = findViewById(R.id.ivPrevius);
+        ivPrevious = findViewById(R.id.ivPrevius);
         ivFR = findViewById(R.id.ivFR);
         ivPlay = findViewById(R.id.ivPlay);
         ivPause = findViewById(R.id.ivPause);
@@ -65,7 +73,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ivRepeatOneWhite = findViewById(R.id.ivRepeatOneWhite);
         mediaPlayer = new MediaPlayer();
 
-        ivPrevius.setOnClickListener(this);
+        ivPrevious.setOnClickListener(this);
         ivFR.setOnClickListener(this);
         ivPlay.setOnClickListener(this);
         ivPause.setOnClickListener(this);
@@ -79,6 +87,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ivRepeatOneWhite.setOnClickListener(this);
     }
 
+    @SuppressLint({"NonConstantResourceId", "SetTextI18n"})
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.ivLock:
@@ -185,13 +194,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     _pausedLength = 0;
                 }
                 mediaPlayer = MediaPlayer.create(getApplicationContext(), Uri.parse(uri));
-                mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                    @Override
-                    public void onCompletion(MediaPlayer mp) {
-
-                        OnCompletion();
-                    }
-                });
+                mediaPlayer.setOnCompletionListener(mp -> OnCompletion());
                 duration = mediaPlayer.getDuration();
                 tvDuration.setText(setFormat(duration));
                 ivPlay.setVisibility(View.GONE);
@@ -226,7 +229,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void run() {
                 sbSeekBar.setProgress(mediaPlayer.getCurrentPosition());
-                handler.postDelayed(this::run, 500);
+                handler.postDelayed(this, 500);
                 tvPosition.setText(setFormat(mediaPlayer.getCurrentPosition()));
             }
         };
@@ -251,30 +254,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
 
-        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer mp) {
-                OnCompletion();
-            }
-        });
+        mediaPlayer.setOnCompletionListener(mp -> OnCompletion());
 
 
-        lvMediaList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                if (isLocked) return;
-                ((TextView) view).setBackgroundColor(getColor(R.color.selectedItemBackground));
-                _pos = position;
-                _pausedLength = 0;
-                ivPlay.callOnClick();
+        lvMediaList.setOnItemClickListener((parent, view, position, id) -> {
+            if (isLocked) return;
+            view.setBackgroundColor(getColor(R.color.selectedItemBackground));
+            _pos = position;
+            _pausedLength = 0;
+            ivPlay.callOnClick();
 
-                mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                    @Override
-                    public void onCompletion(MediaPlayer mp) {
-                        OnCompletion();
-                    }
-                });
-            }
+            mediaPlayer.setOnCompletionListener(mp -> OnCompletion());
         });
     }
 
@@ -300,19 +290,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         lvMediaList.setSelection(_pos);
         String uri = filePaths.get(_pos);
         mediaPlayer = MediaPlayer.create(getApplicationContext(), Uri.parse(uri));
-        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer mp) {
-                OnCompletion();
-            }
-        });
+        mediaPlayer.setOnCompletionListener(mp -> OnCompletion());
         boolean _locked = isLocked;
         isLocked = false;
         ivPlay.callOnClick();
         isLocked = _locked;
     }
 
-    @SuppressLint("DefaultLocate")
+    @SuppressLint({"DefaultLocale"})
     private String setFormat(int duration) {
         int minute = (int) TimeUnit.MILLISECONDS.toMinutes(duration);
         int second = (int) (TimeUnit.MILLISECONDS.toSeconds(duration) -
@@ -321,22 +306,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return String.format("%02d:%02d", minute, second);
     }
 
-    public void getFiles(String dirPath, int level, String extention) {
-        MediaMetadataRetriever metaRetriver = new MediaMetadataRetriever();
+    public void getFiles(String dirPath, int level, String extension) {
+        MediaMetadataRetriever metaRetriever = new MediaMetadataRetriever();
         File dir = new File(dirPath);
         File[] firstLevelFiles = dir.listFiles();
         if (firstLevelFiles != null && firstLevelFiles.length > 0) {
             for (File aFile : firstLevelFiles) {
-                if (aFile.isDirectory()) getFiles(aFile.getPath(), level + 1, extention);
+                if (aFile.isDirectory()) getFiles(aFile.getPath(), level + 1, extension);
                 else {
-                    if (aFile.getName().endsWith("." + extention)) {
-                        metaRetriver.setDataSource(dirPath + "/" + aFile.getName());
-                        String _title = metaRetriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
-                        String _artist = metaRetriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
-                        String _duration = setFormat(Integer.parseInt(metaRetriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)));
+                    if (aFile.getName().endsWith("." + extension)) {
+                        metaRetriever.setDataSource(dirPath + "/" + aFile.getName());
+                        String _title = metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
+                        String _artist = metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
+                        String _duration = setFormat(Integer.parseInt(metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)));
 
-                        if (_title == null) _title = "Bilinmeyen parça";
-                        if (_artist == null) _artist = "Bilinmeyen sanatçı";
+                        if (_title == null) _title = getString(R.string.bilinmeyenparca);
+                        if (_artist == null) _artist = getString(R.string.bilinmeyensanatci);
 
 
                         songs.add(_title + " (" + _artist + ") " + _duration);
@@ -353,20 +338,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         songs.clear();
         filePaths.clear();
         titleTop.clear();
-        ArrayAdapter<String> adapter = null;
-        getFiles(Environment.getStorageDirectory().getPath(), 10, "mp3");
-        adapter = new ArrayAdapter<String>(this,
+        //getFiles(Environment.getStorageDirectory().getPath(), 10, "mp3");
+        getFiles(dir.getPath(), 10, "mp3");
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_gallery_item,
                 songs);
         if (EasyPermissions.hasPermissions(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            //getFiles(Environment.getExternalStorageDirectory().getPath(), 10, "mp3");
             getFiles(Environment.getExternalStorageDirectory().getPath(), 10, "mp3");
-            adapter = new ArrayAdapter<String>(this,
+            adapter = new ArrayAdapter<>(this,
                     android.R.layout.simple_gallery_item,
                     songs);
         } else {
             EasyPermissions.requestPermissions(
                     this,
-                    "Devam etmek için harici veri alanına ulaşma izin vermelisiniz.",
+                    getString(R.string.externallet),
                     0,
                     Manifest.permission.READ_EXTERNAL_STORAGE);
 /*            while (!EasyPermissions.hasPermissions(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
@@ -379,36 +365,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         //GetAllMedia(dir);
         return adapter;
-
     }
 
-    boolean SaveSettings() {
+    void SaveSettings() {
         SharedPreferences settings = getSharedPreferences("Settings", 0);
         SharedPreferences.Editor editor = settings.edit();
         editor.putBoolean("RepeatOne", ivRepeatOneWhite.getVisibility() == View.VISIBLE);
         editor.putBoolean("RepeatAll", ivRepeatAllWhite.getVisibility() == View.VISIBLE);
-        editor.putBoolean("Locked", ivLock.getVisibility() == View.VISIBLE);
-        editor.commit();
-        return true;
+        editor.putBoolean("Unlocked", ivLock.getVisibility() == View.VISIBLE);
+        editor.apply();
     }
 
-    boolean GetSettings() {
+    void GetSettings() {
         SharedPreferences settings = getSharedPreferences("Settings", 0);
         if (settings.getBoolean("RepeatOne", false)) {
             ivRepeatOneGray.callOnClick();
         } else {
             ivRepeatOneWhite.callOnClick();
         }
-        if (settings.getBoolean("RepeatAll", false)) {
+        if (settings.getBoolean("RepeatAll", true)) {
             ivRepeatAllGray.callOnClick();
         } else {
             ivRepeatAllWhite.callOnClick();
         }
-        if (settings.getBoolean("Locked", false)) {
+        if (settings.getBoolean("Unlocked", true)) {
             ivUnlock.callOnClick();
         } else {
             ivLock.callOnClick();
         }
-        return true;
     }
 }
